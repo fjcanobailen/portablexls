@@ -42,13 +42,17 @@ public class Export
             while(cellIterator.hasNext()) {
                 Cell cell = cellIterator.next();
                 if (cell.getCellTypeEnum() == CellType.STRING) {
+                    System.out.println(cell.getStringCellValue());
                     PdfPCell pdfPCell = new PdfPCell(new Phrase(cell.getStringCellValue()));
                     pdfPCell.setBorder(PdfPCell.NO_BORDER);
-                    pdfPCell.setColspan(10);
+                    pdfPCell.setColspan(5);
                     table.addCell(pdfPCell);
-                    break;
+                }
+                else {
+                    System.out.println("*** TYPE: " + cell.getCellTypeEnum());
                 }
             }
+            System.out.println("line");
         }
         document.add(table);
         document.close();
