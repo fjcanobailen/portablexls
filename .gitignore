@@ -11,3 +11,5 @@ log/
 target/
 /src/main/resources/template.xls
 /output.pdf
+/src/main/resources/summary.csv
+/src/main/resources/data.csv
