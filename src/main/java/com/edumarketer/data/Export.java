@@ -27,7 +27,7 @@ public class Export
         Iterator<Row> rowIterator = ws.iterator();
 
         Document document = new Document();
-        PdfWriter.getInstance(document, new FileOutputStream("Excel2PDF_Output.pdf"));
+        PdfWriter.getInstance(document, new FileOutputStream("output.pdf"));
         document.open();
         PdfPTable table = new PdfPTable(10);
         table.setTotalWidth(510f);//table size
