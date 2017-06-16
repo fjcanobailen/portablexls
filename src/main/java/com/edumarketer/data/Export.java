@@ -7,6 +7,7 @@ import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
 import net.sf.jsefa.Deserializer;
 import net.sf.jsefa.csv.CsvIOFactory;
+import org.apache.commons.cli.*;
 import org.apache.poi.hssf.usermodel.HSSFPictureData;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
@@ -22,7 +23,7 @@ import java.util.*;
  * Created by fjcano on 16/06/2017.
  */
 public class Export {
-    public static void perform(String fileName, Queue<String> summary, Queue<String> data) throws DocumentException, IOException {
+    public static void perform(String fileName, Queue<String> summary, Queue<String> data, String outputFileName) throws DocumentException, IOException {
 
         // Read template
         File file = new File(fileName);
@@ -33,11 +34,9 @@ public class Export {
         Iterator<Row> rowIterator = ws.iterator();
 
         Document document = new Document(PageSize.A4.rotate());
-        PdfWriter.getInstance(document, new FileOutputStream("output.pdf"));
+        PdfWriter.getInstance(document, new FileOutputStream(outputFileName));
         document.open();
         PdfPTable table = new PdfPTable(10);
-        //table.setTotalWidth(710f);//table size
-        //table.setLockedWidth(true);
         table.setWidthPercentage(100);
         table.setSpacingBefore(10f);//both are used to mention the space from heading
         table.getDefaultCell().setHorizontalAlignment(Element.ALIGN_LEFT);
@@ -65,7 +64,6 @@ public class Export {
                         // Key
                         PdfPCell pdfPKeyCell = new PdfPCell(new Phrase(cell.getStringCellValue(), f));
                         pdfPKeyCell.setBorder(PdfPCell.NO_BORDER);
-                        //pdfPKeyCell.setColspan(colSpamSummary);
                         table.addCell(pdfPKeyCell);
                         // Value
                         String value = summary.poll();
@@ -106,7 +104,6 @@ public class Export {
         BufferedReader rd = new BufferedReader(new FileReader(fileName));
         String inputLine;
         StringBuilder builder = new StringBuilder();
-        //Store the contents of the file to the StringBuilder.
         while ((inputLine = rd.readLine()) != null)
             builder.append(inputLine);
         Deserializer deserializer = CsvIOFactory.createFactory(Summary.class).createDeserializer();
@@ -156,10 +153,29 @@ public class Export {
 
     public static void main(String[] args) throws IOException, DocumentException {
 
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        Queue summary = readSummary(classLoader.getResource("summary.csv").getFile());
-        Queue data = readData(classLoader.getResource("data.csv").getFile());
-        perform(classLoader.getResource("template.xls").getFile(), summary, data);
+        CommandLineParser parser = new DefaultParser();
+
+        Options options = new Options();
+        options.addOption("t", "template", true, "template file path.");
+        options.addOption("s", "summary", true, "summary file path.");
+        options.addOption("d", "data", true, "data file path.");
+        options.addOption("o", "output", true, "output file path.");
+
+        try {
+            CommandLine line = parser.parse(options, args);
+
+            if (line.hasOption("t") && line.hasOption("s") && line.hasOption("d") && line.hasOption("o")) {
+                Queue summary = readSummary(line.getOptionValue("s"));
+                Queue data = readData(line.getOptionValue("d"));
+                perform(line.getOptionValue("t"), summary, data, line.getOptionValue("o"));
+            } else {
+                System.out.println("USAGE: java -jar target/portablexls-jar-with-dependencies.jar -t [templateFilePath] -s [summaryFilePath] -d [dataFilePath] -o [outputFilePath]");
+            }
+        } catch (ParseException exp) {
+            System.out.println("Unexpected exception:" + exp.getMessage());
+        }
+
+
     }
 
 }
