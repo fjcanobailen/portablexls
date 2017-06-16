@@ -55,14 +55,21 @@ public class Export
             while(cellIterator.hasNext()) {
                 Cell cell = cellIterator.next();
                 if (cell.getCellTypeEnum() == CellType.STRING) {
-                    Font f = new Font(Font.FontFamily.COURIER, 8, Font.NORMAL, GrayColor.BLACK);
-                    PdfPCell pdfPCell = new PdfPCell(new Phrase(cell.getStringCellValue(), f));
-                    pdfPCell.setBorder(PdfPCell.NO_BORDER);
                     if(rowDescription>0) {
+                        Font f = new Font(Font.FontFamily.COURIER, 8, Font.NORMAL, GrayColor.BLACK);
+                        PdfPCell pdfPCell = new PdfPCell(new Phrase(cell.getStringCellValue(), f));
+                        pdfPCell.setBorder(PdfPCell.NO_BORDER);
                         pdfPCell.setColspan(colSpamDescription);
                         rowDescription -= 1;
+                        table.addCell(pdfPCell);
+                    } else {
+                        Font f = new Font(Font.FontFamily.COURIER, 8, Font.NORMAL, GrayColor.WHITE);
+                        PdfPCell pdfPCell = new PdfPCell(new Phrase(cell.getStringCellValue(), f));
+                        pdfPCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                        pdfPCell.setBorder(PdfPCell.NO_BORDER);
+                        pdfPCell.setBackgroundColor(GrayColor.BLACK);
+                        table.addCell(pdfPCell);
                     }
-                    table.addCell(pdfPCell);
                 }
             }
         }
