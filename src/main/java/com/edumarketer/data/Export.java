@@ -17,40 +17,64 @@ import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 
 import java.io.*;
-import java.util.*;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Queue;
 
 /**
  * Created by fjcano on 16/06/2017.
  */
 public class Export {
-    public static void perform(String fileName, Queue<String> summary, Queue<String> data, String outputFileName) throws DocumentException, IOException {
 
+    public static final int SHEET_INDEX = 0;
+    public static final int PDFTABLE_NUM_COLUMS = 10;
+    public static final int PDFTABLE_WIDTH_PERCENTAGE = 100;
+    public static final float PDFTABLE_SPACING_BEFORE = 10f;
+    public static final int IMAGE_INDEX = 0;
+    public static final int IMAGE_SCALE_WIDTH = 350;
+    public static final int IMAGE_SCALE_HEIGHT = 350;
+    public static final int FONT_SIZE = 8;
+    public static final int SUMMARY_ROWS = 11;
+    public static final int SUMMARY_COL_SPAM = 9;
+
+    /**
+     * Perform a export to PDF from a template
+     *
+     * @param templateFileName XLS template file name path
+     * @param summary Summary in queue storage with SUMMARY_ROWS size. It simplify the tree document creation
+     * @param data Data in queue storage. Chucks of PDFTABLE_NUM_COLUMS. It simplify the tree document creation
+     * @param outputFileName PDF file name path
+     * @throws DocumentException
+     * @throws IOException
+     */
+    public static void perform(String templateFileName, Queue<String> summary, Queue<String> data, String outputFileName) throws DocumentException, IOException {
         // Read template
-        File file = new File(fileName);
+        File file = new File(templateFileName);
 
         POIFSFileSystem fs = new POIFSFileSystem(new FileInputStream(file));
         HSSFWorkbook wb = new HSSFWorkbook(fs, true);
-        HSSFSheet ws = wb.getSheetAt(0);
+        HSSFSheet ws = wb.getSheetAt(SHEET_INDEX);
         Iterator<Row> rowIterator = ws.iterator();
 
+        // PDF
         Document document = new Document(PageSize.A4.rotate());
         PdfWriter.getInstance(document, new FileOutputStream(outputFileName));
         document.open();
-        PdfPTable table = new PdfPTable(10);
-        table.setWidthPercentage(100);
-        table.setSpacingBefore(10f);//both are used to mention the space from heading
+        PdfPTable table = new PdfPTable(PDFTABLE_NUM_COLUMS);
+        table.setWidthPercentage(PDFTABLE_WIDTH_PERCENTAGE);
+        table.setSpacingBefore(PDFTABLE_SPACING_BEFORE);//both are used to mention the space from heading
         table.getDefaultCell().setHorizontalAlignment(Element.ALIGN_LEFT);
         table.getDefaultCell().setBorder(PdfPCell.NO_BORDER);
 
+        // Get Image from template
         java.util.List<HSSFPictureData> allPictures = wb.getAllPictures();
-        HSSFPictureData hssfPictureData = allPictures.get(0);
-
+        HSSFPictureData hssfPictureData = allPictures.get(IMAGE_INDEX);
         Image img = Image.getInstance(hssfPictureData.getData());
-        img.scaleToFit(350, 350);
+        img.scaleToFit(IMAGE_SCALE_WIDTH, IMAGE_SCALE_HEIGHT);
 
-        // Number of row summary
-        int rowSummary = 11;
-        int colSpamSummary = 9;
+        // Number of rows summary
+        int rowSummary = SUMMARY_ROWS;
+        int colSpamSummary = SUMMARY_COL_SPAM;
 
         // Template + Summary
         while (rowIterator.hasNext()) {
@@ -60,7 +84,7 @@ public class Export {
                 Cell cell = cellIterator.next();
                 if (cell.getCellTypeEnum() == CellType.STRING) {
                     if (rowSummary > 0) {
-                        Font f = new Font(Font.FontFamily.COURIER, 8, Font.NORMAL, GrayColor.BLACK);
+                        Font f = new Font(Font.FontFamily.COURIER, FONT_SIZE, Font.NORMAL, GrayColor.BLACK);
                         // Key
                         PdfPCell pdfPKeyCell = new PdfPCell(new Phrase(cell.getStringCellValue(), f));
                         pdfPKeyCell.setBorder(PdfPCell.NO_BORDER);
@@ -71,10 +95,9 @@ public class Export {
                         pdfPValueCell.setBorder(PdfPCell.NO_BORDER);
                         pdfPValueCell.setColspan(colSpamSummary);
                         table.addCell(pdfPValueCell);
-
                         rowSummary -= 1;
                     } else {
-                        Font f = new Font(Font.FontFamily.COURIER, 8, Font.NORMAL, GrayColor.WHITE);
+                        Font f = new Font(Font.FontFamily.COURIER, FONT_SIZE, Font.NORMAL, GrayColor.WHITE);
                         PdfPCell pdfPCell = new PdfPCell(new Phrase(cell.getStringCellValue(), f));
                         pdfPCell.setHorizontalAlignment(Element.ALIGN_CENTER);
                         pdfPCell.setBorder(PdfPCell.NO_BORDER);
@@ -84,21 +107,25 @@ public class Export {
                 }
             }
         }
-
         // Data
         for (String d : data) {
-            Font f = new Font(Font.FontFamily.COURIER, 8, Font.NORMAL, GrayColor.BLACK);
+            Font f = new Font(Font.FontFamily.COURIER, FONT_SIZE, Font.NORMAL, GrayColor.BLACK);
             PdfPCell pdfPKeyCell = new PdfPCell(new Phrase(d, f));
             pdfPKeyCell.setBorder(PdfPCell.NO_BORDER);
             table.addCell(pdfPKeyCell);
         }
-
         document.add(img);
         document.add(table);
-
         document.close();
     }
 
+    /**
+     * From CSV file to Summary object
+     *
+     * @param fileName CSV file name path
+     * @return
+     * @throws IOException
+     */
     public static Queue<String> readSummary(String fileName) throws IOException {
         Queue<String> queue = new LinkedList<String>();
         BufferedReader rd = new BufferedReader(new FileReader(fileName));
@@ -124,7 +151,14 @@ public class Export {
         return queue;
     }
 
-    public static Queue readData(String fileName) throws IOException {
+    /**
+     * From CSV file to Data objects
+     *
+     * @param fileName CSV file name path
+     * @return
+     * @throws IOException
+     */
+    public static Queue<String> readData(String fileName) throws IOException {
         Queue<String> queue = new LinkedList<String>();
         BufferedReader rd = new BufferedReader(new FileReader(fileName));
         String inputLine;
@@ -165,8 +199,8 @@ public class Export {
             CommandLine line = parser.parse(options, args);
 
             if (line.hasOption("t") && line.hasOption("s") && line.hasOption("d") && line.hasOption("o")) {
-                Queue summary = readSummary(line.getOptionValue("s"));
-                Queue data = readData(line.getOptionValue("d"));
+                Queue<String> summary = readSummary(line.getOptionValue("s"));
+                Queue<String> data = readData(line.getOptionValue("d"));
                 perform(line.getOptionValue("t"), summary, data, line.getOptionValue("o"));
             } else {
                 System.out.println("USAGE: java -jar target/portablexls-jar-with-dependencies.jar -t [templateFilePath] -s [summaryFilePath] -d [dataFilePath] -o [outputFilePath]");
@@ -174,9 +208,6 @@ public class Export {
         } catch (ParseException exp) {
             System.out.println("Unexpected exception:" + exp.getMessage());
         }
-
-
     }
-
 }
 
