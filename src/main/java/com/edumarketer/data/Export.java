@@ -21,6 +21,9 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Queue;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 /**
  * Created by fjcano on 16/06/2017.
  */
@@ -36,6 +39,8 @@ public class Export {
     public static final int FONT_SIZE = 8;
     public static final int SUMMARY_ROWS = 11;
     public static final int SUMMARY_COL_SPAM = 9;
+
+    static final Logger logger = LogManager.getLogger(Export.class.getName());
 
     /**
      * Perform a export to PDF from a template
@@ -86,17 +91,20 @@ public class Export {
                     if (rowSummary > 0) {
                         Font f = new Font(Font.FontFamily.COURIER, FONT_SIZE, Font.NORMAL, GrayColor.BLACK);
                         // Key
+                        logger.trace("Creating cell key summary from template: " + cell.getStringCellValue());
                         PdfPCell pdfPKeyCell = new PdfPCell(new Phrase(cell.getStringCellValue(), f));
                         pdfPKeyCell.setBorder(PdfPCell.NO_BORDER);
                         table.addCell(pdfPKeyCell);
                         // Value
                         String value = summary.poll();
+                        logger.trace("Creating cell value summary from template: " + value);
                         PdfPCell pdfPValueCell = new PdfPCell(new Phrase(value, f));
                         pdfPValueCell.setBorder(PdfPCell.NO_BORDER);
                         pdfPValueCell.setColspan(colSpamSummary);
                         table.addCell(pdfPValueCell);
                         rowSummary -= 1;
                     } else {
+                        logger.trace("Creating cell data header from template: " + cell.getStringCellValue());
                         Font f = new Font(Font.FontFamily.COURIER, FONT_SIZE, Font.NORMAL, GrayColor.WHITE);
                         PdfPCell pdfPCell = new PdfPCell(new Phrase(cell.getStringCellValue(), f));
                         pdfPCell.setHorizontalAlignment(Element.ALIGN_CENTER);
