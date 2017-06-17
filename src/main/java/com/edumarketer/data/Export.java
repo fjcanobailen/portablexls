@@ -8,6 +8,9 @@ import com.itextpdf.text.pdf.PdfWriter;
 import net.sf.jsefa.Deserializer;
 import net.sf.jsefa.csv.CsvIOFactory;
 import org.apache.commons.cli.*;
+import org.apache.commons.lang.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.poi.hssf.usermodel.HSSFPictureData;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
@@ -20,9 +23,6 @@ import java.io.*;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Queue;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 /**
  * Created by fjcano on 16/06/2017.
@@ -37,7 +37,7 @@ public class Export {
     public static final int IMAGE_SCALE_WIDTH = 350;
     public static final int IMAGE_SCALE_HEIGHT = 350;
     public static final int FONT_SIZE = 8;
-    public static final int SUMMARY_ROWS = 11;
+    public static final int SUMMARY_ROWS = 10;
     public static final int SUMMARY_COL_SPAM = 9;
 
     static final Logger logger = LogManager.getLogger(Export.class.getName());
@@ -87,12 +87,13 @@ public class Export {
             Iterator<Cell> cellIterator = row.cellIterator();
             while (cellIterator.hasNext()) {
                 Cell cell = cellIterator.next();
-                if (cell.getCellTypeEnum() == CellType.STRING) {
+                String cellValue = cell.getStringCellValue();
+                if (cell.getCellTypeEnum() == CellType.STRING && StringUtils.isNotBlank(cellValue)) {
                     if (rowSummary > 0) {
                         Font f = new Font(Font.FontFamily.COURIER, FONT_SIZE, Font.NORMAL, GrayColor.BLACK);
                         // Key
-                        logger.trace("Creating cell key summary from template: " + cell.getStringCellValue());
-                        PdfPCell pdfPKeyCell = new PdfPCell(new Phrase(cell.getStringCellValue(), f));
+                        logger.trace("Creating cell key summary from template: " + cellValue);
+                        PdfPCell pdfPKeyCell = new PdfPCell(new Phrase(cellValue, f));
                         pdfPKeyCell.setBorder(PdfPCell.NO_BORDER);
                         table.addCell(pdfPKeyCell);
                         // Value
@@ -104,9 +105,9 @@ public class Export {
                         table.addCell(pdfPValueCell);
                         rowSummary -= 1;
                     } else {
-                        logger.trace("Creating cell data header from template: " + cell.getStringCellValue());
+                        logger.trace("Creating cell data header from template: " + cellValue);
                         Font f = new Font(Font.FontFamily.COURIER, FONT_SIZE, Font.NORMAL, GrayColor.WHITE);
-                        PdfPCell pdfPCell = new PdfPCell(new Phrase(cell.getStringCellValue(), f));
+                        PdfPCell pdfPCell = new PdfPCell(new Phrase(cellValue, f));
                         pdfPCell.setHorizontalAlignment(Element.ALIGN_CENTER);
                         pdfPCell.setBorder(PdfPCell.NO_BORDER);
                         pdfPCell.setBackgroundColor(GrayColor.BLACK);
