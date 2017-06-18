@@ -9,8 +9,6 @@
 # Maven
 log/
 target/
-/src/main/resources/template.xls
-/output.pdf
-/src/main/resources/summary.csv
-/src/main/resources/data.csv
-/src/main/resources/output.pdf
+*.xls
+*.csv
+*.pdf
